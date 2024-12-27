@@ -1,9 +1,10 @@
 import "./App.css";
+import OrdersList from "./pages/OrdersList";
 
 function App() {
   return (
     <div className="App">
-      <h1>Welcome to E-Commerce App!!!</h1>
+      <OrdersList />
     </div>
   );
 }

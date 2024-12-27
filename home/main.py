@@ -1,7 +1,17 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from routers import orders, sales
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Allow React frontend origin
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Necessary HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 @app.get("/")
 async def root():
