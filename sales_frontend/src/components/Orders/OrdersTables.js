@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
 const OrdersTable = ({ details }) => {
+  // console.log("details", details);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     order_id: "",
@@ -30,7 +31,7 @@ const OrdersTable = ({ details }) => {
   );
 
   return (
-    <div className="p-2 sm:p-4 bg-[#a8a29e] rounded-lg shadow-lg">
+    <div className="p-2 sm:p-4 bg-blue-100 rounded-lg shadow-lg">
       <div>
         <div className="flex justify-between mb-4">
           <div>
@@ -97,7 +98,7 @@ const OrdersTable = ({ details }) => {
         <div className="flex justify-center mt-4">
           <div className="flex items-center space-x-2">
             <button
-              className="bg-light-blue-200 text-black px-4 py-2 rounded-l-lg disabled:bg-gray-200"
+              className="bg-light-blue-200 text-black px-4 py-2 rounded-l-lg disabled:bg-blue-100"
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
             >
@@ -105,7 +106,7 @@ const OrdersTable = ({ details }) => {
             </button>
             <span className="text-black font-bold">{currentPage}</span>
             <button
-              className="bg-light-blue-200 text-black px-4 py-2 rounded-r-lg disabled:bg-gray-200"
+              className="bg-light-blue-200 text-black px-4 py-2 rounded-r-lg disabled:bg-blue-100"
               onClick={() =>
                 setCurrentPage((prev) => Math.min(prev + 1, totalPages))
               }

@@ -12,8 +12,6 @@ const OrderDetailsPage = () => {
       .catch((error) => console.error("Error fetching order details:", error));
   }, []);
 
-  console.log(orders);
-
   // Ensure orders are wrapped in an array if there's only one order
   const ordersArray = Array.isArray(orders) ? orders : [orders];
 

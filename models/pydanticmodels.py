@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 class OrderDetailsCreate(BaseModel):
     order_id: str
@@ -21,3 +21,12 @@ class OrderCreate(BaseModel):
     customer_name: str
     state: str
     city: str
+
+class UserCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone_number: str
+    role: str
+    username: str
+    password: str
