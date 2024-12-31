@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta 
 from fastapi import Depends, HTTPException, status, APIRouter, Form, Request, Body
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from google.cloud import bigquery
 import os
@@ -9,12 +11,18 @@ from jose import jwt
 
 # Load environment variables
 load_dotenv()
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+router = APIRouter()
 
 router = APIRouter(prefix="/users")
 
 SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 PROJECT_ID = os.getenv("PROJECT_ID")
 SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM='HS256'
 
 # Function to get BigQuery client
 def get_bigquery_client():
@@ -30,38 +38,57 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # User model (Example: Adjust based on your data model)
 class User:
-    def __init__(self, id, username, first_name, last_name, email, phone_number, hashed_password):
+    def __init__(self, id, username, first_name, last_name, email, phone_number, password):
         self.id = id
         self.username = username
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
         self.phone_number = phone_number
-        self.hashed_password = hashed_password
+        self.password = password
 
 # Authenticate user and return JWT
 def authenticate_user(username: str, password: str, db: bigquery.Client):
-    query = f"SELECT * FROM `{PROJECT_ID}.your_dataset.users` WHERE username = '{username}'"
-    result = db.query(query).result()
+    query = f"""
+        SELECT * 
+        FROM `{PROJECT_ID}.sales_data.users` 
+        WHERE username = @username
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("username", "STRING", username)
+        ]
+    )
+    result = db.query(query, job_config=job_config).result()
     user = [dict(row) for row in result]
-    if not user or password != user[0]["hashed_password"]:
-        return None
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="User not found"
+        )
+    
     return User(
-        id=user[0]["id"],
-        username=user[0]["username"],
-        first_name=user[0]["first_name"],
-        last_name=user[0]["last_name"],
-        email=user[0]["email"],
-        phone_number=user[0]["phone_number"],
-        hashed_password=user[0]["hashed_password"]
+        id=user[0].get("id"),
+        username=user[0].get("username"),
+        first_name=user[0].get("first_name"),
+        last_name=user[0].get("last_name"),
+        email=user[0].get("email"),
+        phone_number=user[0].get("phone_number"),
+        password=user[0].get("password")
     )
 
+
 # Generate JWT token
+from datetime import datetime, timedelta  # Ensure this is your import
+
 def create_access_token(data: dict):
     to_encode = data.copy()
-    to_encode.update({"exp": datetime.utcnow() + timedelta(minutes=15)})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
+    expire = datetime.utcnow() + timedelta(minutes=15)  # Use datetime.utcnow
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 
 # Dependency to get current user from token
 def get_current_user(token: str = Depends(oauth2_scheme), db: bigquery.Client = Depends(get_bigquery_client)):
@@ -84,21 +111,55 @@ def register_user(user_data: dict = Body(...), db: bigquery.Client = Depends(get
     phone_number = user_data.get("phone_number")
     password = user_data.get("password")
 
-    # Hash password (Replace with actual hashing method)
-    hashed_password = password  # For simplicity, storing raw password here
     query = f"""
-    INSERT INTO `{PROJECT_ID}.your_dataset.users` 
-    (username, first_name, last_name, email, phone_number, hashed_password) 
-    VALUES ('{username}', '{first_name}', '{last_name}', '{email}', '{phone_number}', '{hashed_password}')
+    INSERT INTO `{PROJECT_ID}.sales_data.users` 
+    (username, first_name, last_name, email, phone_number, password) 
+    VALUES ('{username}', '{first_name}', '{last_name}', '{email}', '{phone_number}', '{password}')
     """
     db.query(query).result()
     return {"msg": "User registered successfully"}
 
 # Login route with JWT token
+from fastapi.responses import JSONResponse
+
 @router.post("/token/")
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: bigquery.Client = Depends(get_bigquery_client)):
+def login_for_access_token(
+    form_data: LoginRequest, 
+    db: bigquery.Client = Depends(get_bigquery_client)
+):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username or password")
+
+    # Create the JWT token
     access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    # Set the cookie in the response
+    response = JSONResponse(
+        content={"message": "Login successful", "token_type": "bearer"}
+    )
+    response.set_cookie(
+        key="access_token", 
+        value=access_token, 
+        httponly=True,  # Ensures the cookie is not accessible via JavaScript
+        secure=True,    # Use secure cookies (only sent over HTTPS)
+        samesite="Lax", # Prevent CSRF attacks
+        max_age=15 * 60 # Token expiration time in seconds
+    )
+    return response
+
+@router.post("/logout/")
+def logout_user():
+    response = JSONResponse(
+        content={"message": "Logged out successfully"}
+    )
+    response.set_cookie(
+        key="access_token", 
+        value="",          # Empty value to clear the cookie
+        httponly=True, 
+        secure=True, 
+        samesite="Lax", 
+        max_age=0,         # Expire immediately
+        expires="Thu, 01 Jan 1970 00:00:00 GMT"  # Set expiration in the past
+    )
+    return response

@@ -20,4 +20,4 @@ async def root():
 # Include routers
 app.include_router(orders.router)
 app.include_router(sales.router)
-# app.include_router(users.router)
+app.include_router(users.router)
