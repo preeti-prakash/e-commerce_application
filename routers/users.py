@@ -90,8 +90,6 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 
-
-
 # Register route
 @router.post("/register/")
 def register_user(user_data: dict = Body(...), db: bigquery.Client = Depends(get_bigquery_client)):
@@ -127,15 +125,7 @@ def login_for_access_token(
     
     # Set the cookie in the response
     response = JSONResponse(
-        content={"message": "Login successful", "token_type": "bearer"}
-    )
-    response.set_cookie(
-        key="access_token", 
-        value=access_token, 
-        httponly=True,  # Ensures the cookie is not accessible via JavaScript
-        secure=True,    # Use secure cookies (only sent over HTTPS)
-        samesite="Lax", # Prevent CSRF attacks
-        max_age=15 * 60 # Token expiration time in seconds
+        content={"message": "Login successful","access_token":access_token, "token_type": "bearer"}
     )
     return response
 
@@ -150,7 +140,7 @@ def logout_user():
         httponly=True, 
         secure=True, 
         samesite="Lax", 
-        max_age=0,         # Expire immediately
-        expires="Thu, 01 Jan 1970 00:00:00 GMT"  # Set expiration in the past
+        max_age=0,        
+        expires="Thu, 01 Jan 1970 00:00:00 GMT" 
     )
     return response
