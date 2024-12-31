@@ -1,15 +1,13 @@
-from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from home.database import client
 from home.utils import execute_query
 from models.pydanticmodels import SalesTargetCreate
-from .users import get_current_user
+
 
 router = APIRouter(prefix="/sales")
-user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @router.get("/", response_model=list[SalesTargetCreate])
-async def get_sales_targets(user: user_dependency):
+async def get_sales_targets():
     query = """
         SELECT month, category, target 
         FROM `boreal-pride-319909.sales_data.sales_targets`

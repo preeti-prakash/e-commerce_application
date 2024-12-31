@@ -90,16 +90,7 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 
-# Dependency to get current user from token
-def get_current_user(token: str = Depends(oauth2_scheme), db: bigquery.Client = Depends(get_bigquery_client)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=400, detail="Invalid credentials")
-        return authenticate_user(username=username, password=None, db=db)
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=400, detail="Invalid credentials")
+
 
 # Register route
 @router.post("/register/")
