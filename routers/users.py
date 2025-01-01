@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta 
-from fastapi import Depends, HTTPException, status, APIRouter, Form, Request, Body
+from fastapi import Depends, HTTPException, status, APIRouter, Body
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from google.cloud import bigquery
 import os
 from dotenv import load_dotenv
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import  OAuth2PasswordBearer
 from fastapi.responses import JSONResponse
 from jose import jwt
+from fastapi.responses import JSONResponse
 
 # Load environment variables
 load_dotenv()
@@ -36,7 +37,7 @@ def get_db():
 # OAuth2PasswordBearer instance
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# User model (Example: Adjust based on your data model)
+# User model 
 class User:
     def __init__(self, id, username, first_name, last_name, email, phone_number, password):
         self.id = id
@@ -108,8 +109,7 @@ def register_user(user_data: dict = Body(...), db: bigquery.Client = Depends(get
     db.query(query).result()
     return {"msg": "User registered successfully"}
 
-# Login route with JWT token
-from fastapi.responses import JSONResponse
+
 
 @router.post("/token/")
 def login_for_access_token(

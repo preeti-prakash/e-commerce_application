@@ -22,11 +22,3 @@ class OrderCreate(BaseModel):
     state: str
     city: str
 
-class UserCreate(BaseModel):
-    first_name: str
-    last_name: str
-    email: EmailStr
-    phone_number: str
-    role: str
-    username: str
-    password: str

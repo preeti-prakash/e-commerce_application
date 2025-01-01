@@ -7,9 +7,10 @@ import Authentication from "./pages/Authentication";
 const App = () => {
   return (
     <Router>
-      <Authentication />
-      <Navigation />
-      <MainContent />
+      <Authentication>
+        <Navigation />
+        <MainContent />
+      </Authentication>
     </Router>
   );
 };
